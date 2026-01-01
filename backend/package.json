@@ -1,0 +1,19 @@
+{
+  "name": "backend",
+  "private": true,
+  "scripts": {
+    "dev": "bun --watch main.ts",
+    "start": "bun main.ts",
+    "ts": "tsc --version && tsc --project tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/express": "^5.0.6"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
