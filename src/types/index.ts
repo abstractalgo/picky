@@ -1,4 +1,9 @@
-export type TaskStatus = "backlog" | "todo" | "in_progress" | "in_review" | "done";
+export type TaskStatus =
+  | "backlog"
+  | "todo"
+  | "in_progress"
+  | "in_review"
+  | "done";
 
 export interface Tag {
   id: string;
@@ -9,7 +14,6 @@ export interface Tag {
 export interface Person {
   id: string;
   name: string;
-  email: string;
   avatarUrl?: string;
 }
 
@@ -22,14 +26,15 @@ export interface Milestone {
 }
 
 export interface Task {
-  id: string;
+  id: number;
   title: string;
   description?: string;
   status: TaskStatus;
-  assigneeIds: string[]; // References to Person.id
-  dependencyIds: string[]; // References to other Task.id
-  tagIds: string[]; // References to Tag.id
-  milestoneId?: string; // Reference to Milestone.id
+  storyPoints?: number;
+  assigneeIds: Person["id"][]; // References to Person.id
+  dependencyIds: Task["id"][]; // References to other Task.id
+  tagIds: Tag["id"][]; // References to Tag.id
+  milestoneId?: Milestone["id"]; // Reference to Milestone.id
   startDate?: string; // ISO date string
   endDate?: string; // ISO date string (due date)
   createdAt: string; // ISO date string

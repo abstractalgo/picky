@@ -42,17 +42,15 @@ function PersonDialogForm({ person, onClose }: PersonDialogFormProps) {
   const isEditing = !!person;
 
   const [name, setName] = useState(person?.name ?? "");
-  const [email, setEmail] = useState(person?.email ?? "");
   const [avatarUrl, setAvatarUrl] = useState(person?.avatarUrl ?? "");
 
   const handleSubmit = () => {
-    if (!name.trim() || !email.trim()) {
+    if (!name.trim()) {
       return;
     }
 
     const personData = {
       name: name.trim(),
-      email: email.trim(),
       avatarUrl: avatarUrl.trim() || undefined,
     };
 
@@ -90,17 +88,6 @@ function PersonDialogForm({ person, onClose }: PersonDialogFormProps) {
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="john@example.com"
-          />
-        </div>
-
-        <div className="grid gap-2">
           <Label htmlFor="avatarUrl">Avatar URL (optional)</Label>
           <Input
             id="avatarUrl"
@@ -120,7 +107,7 @@ function PersonDialogForm({ person, onClose }: PersonDialogFormProps) {
         <Button variant="outline" onClick={onClose}>
           Cancel
         </Button>
-        <Button onClick={handleSubmit} disabled={!name.trim() || !email.trim()}>
+        <Button onClick={handleSubmit} disabled={!name.trim()}>
           {isEditing ? "Save" : "Add"}
         </Button>
       </DialogFooter>

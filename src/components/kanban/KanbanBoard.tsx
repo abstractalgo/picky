@@ -18,7 +18,7 @@ export function KanbanBoard({ onEditTask }: KanbanBoardProps) {
     }
 
     const newStatus = destination.droppableId as TaskStatus;
-    moveTask(draggableId, newStatus);
+    moveTask(parseInt(draggableId), newStatus);
   };
 
   const getTasksByStatus = (status: TaskStatus) =>

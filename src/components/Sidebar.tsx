@@ -76,7 +76,7 @@ export function Sidebar() {
             <Settings className="h-4 w-4" />
           </Button>
         </SheetTrigger>
-        <SheetContent className="w-80 sm:w-96">
+        <SheetContent className="w-80 px-2 sm:w-96">
           <SheetHeader>
             <SheetTitle>Project Settings</SheetTitle>
           </SheetHeader>
@@ -105,14 +105,9 @@ export function Sidebar() {
                         key={person.id}
                         className="group flex items-center justify-between rounded border border-border p-2"
                       >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium">
-                            {person.name}
-                          </p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {person.email}
-                          </p>
-                        </div>
+                        <p className="min-w-0 truncate text-sm font-medium">
+                          {person.name}
+                        </p>
                         <Button
                           variant="ghost"
                           size="icon"

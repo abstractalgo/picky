@@ -1,27 +1,27 @@
 import { useState, type FC } from "react";
-import { ProjectProvider, useProject } from "@/store/ProjectContext";
+import { useProject } from "@/store/ProjectContext";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
-import { TaskDialog } from "@/components/dialogs/TaskDialog";
+import { TaskSheet } from "@/components/TaskSheet";
 import { Sidebar } from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import type { Task, TaskStatus } from "@/types";
 import { Plus } from "lucide-react";
 
-function AppContent() {
+export const App: FC = () => {
   const { state } = useProject();
-  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const [taskSheetOpen, setTaskSheetOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | undefined>();
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>("todo");
 
   const handleEditTask = (task: Task) => {
     setSelectedTask(task);
-    setTaskDialogOpen(true);
+    setTaskSheetOpen(true);
   };
 
   const handleNewTask = () => {
     setSelectedTask(undefined);
     setDefaultStatus("todo");
-    setTaskDialogOpen(true);
+    setTaskSheetOpen(true);
   };
 
   const totalTasks = state.tasks.length;
@@ -50,21 +50,13 @@ function AppContent() {
         <KanbanBoard onEditTask={handleEditTask} />
       </main>
 
-      {/* Task Dialog */}
-      <TaskDialog
-        open={taskDialogOpen}
-        onOpenChange={setTaskDialogOpen}
+      {/* Task Sheet */}
+      <TaskSheet
+        open={taskSheetOpen}
+        onOpenChange={setTaskSheetOpen}
         task={selectedTask}
         defaultStatus={defaultStatus}
       />
     </div>
-  );
-}
-
-export const App: FC = () => {
-  return (
-    <ProjectProvider>
-      <AppContent />
-    </ProjectProvider>
   );
 };

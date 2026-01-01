@@ -1,10 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useReducer,
-  type ReactNode,
-  useCallback,
-} from "react";
+import { create } from "zustand";
 import type { Task, Person, Milestone, Tag, TaskStatus } from "@/types";
 
 interface ProjectState {
@@ -12,119 +6,47 @@ interface ProjectState {
   people: Person[];
   milestones: Milestone[];
   tags: Tag[];
+  nextTaskId: number;
 }
 
-type ProjectAction =
-  | { type: "ADD_TASK"; payload: Task }
-  | { type: "UPDATE_TASK"; payload: Task }
-  | { type: "DELETE_TASK"; payload: string }
-  | { type: "MOVE_TASK"; payload: { taskId: string; newStatus: TaskStatus } }
-  | { type: "ADD_PERSON"; payload: Person }
-  | { type: "UPDATE_PERSON"; payload: Person }
-  | { type: "DELETE_PERSON"; payload: string }
-  | { type: "ADD_MILESTONE"; payload: Milestone }
-  | { type: "UPDATE_MILESTONE"; payload: Milestone }
-  | { type: "DELETE_MILESTONE"; payload: string }
-  | { type: "ADD_TAG"; payload: Tag }
-  | { type: "UPDATE_TAG"; payload: Tag }
-  | { type: "DELETE_TAG"; payload: string };
+interface ProjectActions {
+  addTask: (task: Omit<Task, "id" | "createdAt" | "updatedAt">) => void;
+  updateTask: (task: Task) => void;
+  deleteTask: (id: Task["id"]) => void;
+  moveTask: (taskId: Task["id"], newStatus: TaskStatus) => void;
+  addPerson: (person: Omit<Person, "id">) => void;
+  updatePerson: (person: Person) => void;
+  deletePerson: (id: Person["id"]) => void;
+  addMilestone: (milestone: Omit<Milestone, "id">) => void;
+  updateMilestone: (milestone: Milestone) => void;
+  deleteMilestone: (id: Milestone["id"]) => void;
+  addTag: (tag: Omit<Tag, "id">) => void;
+  updateTag: (tag: Tag) => void;
+  deleteTag: (id: Tag["id"]) => void;
+  getTasksByStatus: (status: TaskStatus) => Task[];
+  getPersonById: (id: Person["id"]) => Person | undefined;
+  getMilestoneById: (id: Milestone["id"]) => Milestone | undefined;
+  getTagById: (id: Tag["id"]) => Tag | undefined;
+  getTaskDependencies: (task: Task) => Task[];
+}
 
-function projectReducer(
-  state: ProjectState,
-  action: ProjectAction
-): ProjectState {
-  switch (action.type) {
-    case "ADD_TASK":
-      return { ...state, tasks: [...state.tasks, action.payload] };
-    case "UPDATE_TASK":
-      return {
-        ...state,
-        tasks: state.tasks.map((t) =>
-          t.id === action.payload.id ? action.payload : t
-        ),
-      };
-    case "DELETE_TASK":
-      return {
-        ...state,
-        tasks: state.tasks.filter((t) => t.id !== action.payload),
-      };
-    case "MOVE_TASK":
-      return {
-        ...state,
-        tasks: state.tasks.map((t) =>
-          t.id === action.payload.taskId
-            ? {
-                ...t,
-                status: action.payload.newStatus,
-                updatedAt: new Date().toISOString(),
-              }
-            : t
-        ),
-      };
-    case "ADD_PERSON":
-      return { ...state, people: [...state.people, action.payload] };
-    case "UPDATE_PERSON":
-      return {
-        ...state,
-        people: state.people.map((p) =>
-          p.id === action.payload.id ? action.payload : p
-        ),
-      };
-    case "DELETE_PERSON":
-      return {
-        ...state,
-        people: state.people.filter((p) => p.id !== action.payload),
-        tasks: state.tasks.map((t) => ({
-          ...t,
-          assigneeIds: t.assigneeIds.filter((id) => id !== action.payload),
-        })),
-      };
-    case "ADD_MILESTONE":
-      return { ...state, milestones: [...state.milestones, action.payload] };
-    case "UPDATE_MILESTONE":
-      return {
-        ...state,
-        milestones: state.milestones.map((m) =>
-          m.id === action.payload.id ? action.payload : m
-        ),
-      };
-    case "DELETE_MILESTONE":
-      return {
-        ...state,
-        milestones: state.milestones.filter((m) => m.id !== action.payload),
-        tasks: state.tasks.map((t) =>
-          t.milestoneId === action.payload ? { ...t, milestoneId: undefined } : t
-        ),
-      };
-    case "ADD_TAG":
-      return { ...state, tags: [...state.tags, action.payload] };
-    case "UPDATE_TAG":
-      return {
-        ...state,
-        tags: state.tags.map((tag) =>
-          tag.id === action.payload.id ? action.payload : tag
-        ),
-      };
-    case "DELETE_TAG":
-      return {
-        ...state,
-        tags: state.tags.filter((tag) => tag.id !== action.payload),
-        tasks: state.tasks.map((t) => ({
-          ...t,
-          tagIds: t.tagIds.filter((id) => id !== action.payload),
-        })),
-      };
-    default:
-      return state;
-  }
+type ProjectStore = ProjectState & ProjectActions;
+
+function generateId(): string {
+  return Math.random().toString(36).substring(2, 9);
 }
 
 // Demo data
 const demoPeople: Person[] = [
-  { id: "p1", name: "Alice Chen", email: "alice@example.com" },
-  { id: "p2", name: "Bob Martinez", email: "bob@example.com" },
-  { id: "p3", name: "Carol Johnson", email: "carol@example.com" },
-  { id: "p4", name: "David Kim", email: "david@example.com" },
+  {
+    id: "p1",
+    name: "Dragan Okanovic",
+    avatarUrl:
+      "https://pbs.twimg.com/profile_images/1482453058567258113/_ECl3eS7_400x400.png",
+  },
+  { id: "p2", name: "Bob Martinez" },
+  { id: "p3", name: "Carol Johnson" },
+  { id: "p4", name: "David Kim" },
 ];
 
 const demoTags: Tag[] = [
@@ -156,10 +78,11 @@ const demoMilestones: Milestone[] = [
 const now = new Date().toISOString();
 const demoTasks: Task[] = [
   {
-    id: "task1",
+    id: 1,
     title: "Research competitor features",
     description: "Analyze top 5 competitors and document their key features",
     status: "done",
+    storyPoints: 3,
     assigneeIds: ["p1"],
     dependencyIds: [],
     tagIds: ["t3"],
@@ -168,22 +91,25 @@ const demoTasks: Task[] = [
     updatedAt: now,
   },
   {
-    id: "task2",
+    id: 2,
     title: "Design system architecture",
     description: "Create high-level architecture diagrams and technical spec",
     status: "done",
+    storyPoints: 8,
     assigneeIds: ["p2", "p4"],
-    dependencyIds: ["task1"],
+    dependencyIds: [1],
     tagIds: ["t5", "t6"],
     milestoneId: "m1",
     createdAt: now,
     updatedAt: now,
   },
   {
-    id: "task3",
+    id: 3,
     title: "Set up CI/CD pipeline",
-    description: "Configure GitHub Actions for automated testing and deployment",
+    description:
+      "Configure GitHub Actions for automated testing and deployment",
     status: "in_review",
+    storyPoints: 5,
     assigneeIds: ["p4"],
     dependencyIds: [],
     tagIds: ["t6"],
@@ -192,12 +118,13 @@ const demoTasks: Task[] = [
     updatedAt: now,
   },
   {
-    id: "task4",
+    id: 4,
     title: "Implement user authentication",
     description: "Add login, signup, and password reset functionality",
     status: "in_progress",
+    storyPoints: 13,
     assigneeIds: ["p2"],
-    dependencyIds: ["task2"],
+    dependencyIds: [2],
     tagIds: ["t2", "t6"],
     milestoneId: "m1",
     endDate: "2025-01-15T00:00:00.000Z",
@@ -205,10 +132,11 @@ const demoTasks: Task[] = [
     updatedAt: now,
   },
   {
-    id: "task5",
+    id: 5,
     title: "Create landing page",
     description: "Design and implement the marketing landing page",
     status: "in_progress",
+    storyPoints: 5,
     assigneeIds: ["p3"],
     dependencyIds: [],
     tagIds: ["t2", "t5"],
@@ -217,12 +145,14 @@ const demoTasks: Task[] = [
     updatedAt: now,
   },
   {
-    id: "task6",
+    id: 6,
     title: "Fix login button not responding",
-    description: "Users report the login button sometimes doesn't work on mobile",
+    description:
+      "Users report the login button sometimes doesn't work on mobile",
     status: "todo",
+    storyPoints: 2,
     assigneeIds: ["p2"],
-    dependencyIds: ["task4"],
+    dependencyIds: [4],
     tagIds: ["t1", "t4"],
     milestoneId: "m1",
     endDate: "2025-01-10T00:00:00.000Z",
@@ -230,22 +160,24 @@ const demoTasks: Task[] = [
     updatedAt: now,
   },
   {
-    id: "task7",
+    id: 7,
     title: "Write API documentation",
     description: "Document all REST endpoints with examples",
     status: "todo",
+    storyPoints: 3,
     assigneeIds: ["p1"],
-    dependencyIds: ["task4"],
+    dependencyIds: [4],
     tagIds: ["t3"],
     milestoneId: "m1",
     createdAt: now,
     updatedAt: now,
   },
   {
-    id: "task8",
+    id: 8,
     title: "Add dark mode support",
     description: "Implement theme switching with system preference detection",
     status: "todo",
+    storyPoints: 5,
     assigneeIds: [],
     dependencyIds: [],
     tagIds: ["t2", "t5"],
@@ -254,10 +186,11 @@ const demoTasks: Task[] = [
     updatedAt: now,
   },
   {
-    id: "task9",
+    id: 9,
     title: "Database schema review",
     description: "Review and optimize database indexes for better performance",
     status: "backlog",
+    storyPoints: 3,
     assigneeIds: ["p4"],
     dependencyIds: [],
     tagIds: ["t6"],
@@ -266,10 +199,11 @@ const demoTasks: Task[] = [
     updatedAt: now,
   },
   {
-    id: "task10",
+    id: 10,
     title: "Add export to CSV feature",
     description: "Allow users to export their data as CSV files",
     status: "backlog",
+    storyPoints: 5,
     assigneeIds: [],
     dependencyIds: [],
     tagIds: ["t2"],
@@ -278,186 +212,176 @@ const demoTasks: Task[] = [
     updatedAt: now,
   },
   {
-    id: "task11",
+    id: 11,
     title: "Implement email notifications",
     description: "Send email alerts for important events",
     status: "backlog",
+    storyPoints: 8,
     assigneeIds: [],
-    dependencyIds: ["task4"],
+    dependencyIds: [4],
     tagIds: ["t2", "t6"],
     createdAt: now,
     updatedAt: now,
   },
 ];
 
-const initialState: ProjectState = {
+export const useProjectStore = create<ProjectStore>((set, get) => ({
   tasks: demoTasks,
   people: demoPeople,
   milestones: demoMilestones,
   tags: demoTags,
-};
+  nextTaskId: 12,
 
-interface ProjectContextValue {
-  state: ProjectState;
-  addTask: (task: Omit<Task, "id" | "createdAt" | "updatedAt">) => void;
-  updateTask: (task: Task) => void;
-  deleteTask: (id: string) => void;
-  moveTask: (taskId: string, newStatus: TaskStatus) => void;
-  addPerson: (person: Omit<Person, "id">) => void;
-  updatePerson: (person: Person) => void;
-  deletePerson: (id: string) => void;
-  addMilestone: (milestone: Omit<Milestone, "id">) => void;
-  updateMilestone: (milestone: Milestone) => void;
-  deleteMilestone: (id: string) => void;
-  addTag: (tag: Omit<Tag, "id">) => void;
-  updateTag: (tag: Tag) => void;
-  deleteTag: (id: string) => void;
-  getTasksByStatus: (status: TaskStatus) => Task[];
-  getPersonById: (id: string) => Person | undefined;
-  getMilestoneById: (id: string) => Milestone | undefined;
-  getTagById: (id: string) => Tag | undefined;
-  getTaskDependencies: (task: Task) => Task[];
-}
+  addTask: (task) => {
+    const now = new Date().toISOString();
+    set((state) => ({
+      tasks: [
+        ...state.tasks,
+        { ...task, id: state.nextTaskId, createdAt: now, updatedAt: now },
+      ],
+      nextTaskId: state.nextTaskId + 1,
+    }));
+  },
 
-const ProjectContext = createContext<ProjectContextValue | null>(null);
+  updateTask: (task) => {
+    set((state) => ({
+      tasks: state.tasks.map((t) =>
+        t.id === task.id ? { ...task, updatedAt: new Date().toISOString() } : t
+      ),
+    }));
+  },
 
-function generateId(): string {
-  return Math.random().toString(36).substring(2, 9);
-}
+  deleteTask: (id) => {
+    set((state) => ({
+      tasks: state.tasks.filter((t) => t.id !== id),
+    }));
+  },
 
-export function ProjectProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(projectReducer, initialState);
+  moveTask: (taskId, newStatus) => {
+    set((state) => ({
+      tasks: state.tasks.map((t) =>
+        t.id === taskId
+          ? { ...t, status: newStatus, updatedAt: new Date().toISOString() }
+          : t
+      ),
+    }));
+  },
 
-  const addTask = useCallback(
-    (task: Omit<Task, "id" | "createdAt" | "updatedAt">) => {
-      const now = new Date().toISOString();
-      dispatch({
-        type: "ADD_TASK",
-        payload: { ...task, id: generateId(), createdAt: now, updatedAt: now },
-      });
-    },
-    []
-  );
+  addPerson: (person) => {
+    set((state) => ({
+      people: [...state.people, { ...person, id: generateId() }],
+    }));
+  },
 
-  const updateTask = useCallback((task: Task) => {
-    dispatch({
-      type: "UPDATE_TASK",
-      payload: { ...task, updatedAt: new Date().toISOString() },
-    });
-  }, []);
+  updatePerson: (person) => {
+    set((state) => ({
+      people: state.people.map((p) => (p.id === person.id ? person : p)),
+    }));
+  },
 
-  const deleteTask = useCallback((id: string) => {
-    dispatch({ type: "DELETE_TASK", payload: id });
-  }, []);
+  deletePerson: (id) => {
+    set((state) => ({
+      people: state.people.filter((p) => p.id !== id),
+      tasks: state.tasks.map((t) => ({
+        ...t,
+        assigneeIds: t.assigneeIds.filter((aid) => aid !== id),
+      })),
+    }));
+  },
 
-  const moveTask = useCallback((taskId: string, newStatus: TaskStatus) => {
-    dispatch({ type: "MOVE_TASK", payload: { taskId, newStatus } });
-  }, []);
+  addMilestone: (milestone) => {
+    set((state) => ({
+      milestones: [...state.milestones, { ...milestone, id: generateId() }],
+    }));
+  },
 
-  const addPerson = useCallback((person: Omit<Person, "id">) => {
-    dispatch({
-      type: "ADD_PERSON",
-      payload: { ...person, id: generateId() },
-    });
-  }, []);
+  updateMilestone: (milestone) => {
+    set((state) => ({
+      milestones: state.milestones.map((m) =>
+        m.id === milestone.id ? milestone : m
+      ),
+    }));
+  },
 
-  const updatePerson = useCallback((person: Person) => {
-    dispatch({ type: "UPDATE_PERSON", payload: person });
-  }, []);
+  deleteMilestone: (id) => {
+    set((state) => ({
+      milestones: state.milestones.filter((m) => m.id !== id),
+      tasks: state.tasks.map((t) =>
+        t.milestoneId === id ? { ...t, milestoneId: undefined } : t
+      ),
+    }));
+  },
 
-  const deletePerson = useCallback((id: string) => {
-    dispatch({ type: "DELETE_PERSON", payload: id });
-  }, []);
+  addTag: (tag) => {
+    set((state) => ({
+      tags: [...state.tags, { ...tag, id: generateId() }],
+    }));
+  },
 
-  const addMilestone = useCallback((milestone: Omit<Milestone, "id">) => {
-    dispatch({
-      type: "ADD_MILESTONE",
-      payload: { ...milestone, id: generateId() },
-    });
-  }, []);
+  updateTag: (tag) => {
+    set((state) => ({
+      tags: state.tags.map((t) => (t.id === tag.id ? tag : t)),
+    }));
+  },
 
-  const updateMilestone = useCallback((milestone: Milestone) => {
-    dispatch({ type: "UPDATE_MILESTONE", payload: milestone });
-  }, []);
+  deleteTag: (id) => {
+    set((state) => ({
+      tags: state.tags.filter((t) => t.id !== id),
+      tasks: state.tasks.map((t) => ({
+        ...t,
+        tagIds: t.tagIds.filter((tid) => tid !== id),
+      })),
+    }));
+  },
 
-  const deleteMilestone = useCallback((id: string) => {
-    dispatch({ type: "DELETE_MILESTONE", payload: id });
-  }, []);
+  getTasksByStatus: (status) => {
+    return get().tasks.filter((t) => t.status === status);
+  },
 
-  const addTag = useCallback((tag: Omit<Tag, "id">) => {
-    dispatch({
-      type: "ADD_TAG",
-      payload: { ...tag, id: generateId() },
-    });
-  }, []);
+  getPersonById: (id) => {
+    return get().people.find((p) => p.id === id);
+  },
 
-  const updateTag = useCallback((tag: Tag) => {
-    dispatch({ type: "UPDATE_TAG", payload: tag });
-  }, []);
+  getMilestoneById: (id) => {
+    return get().milestones.find((m) => m.id === id);
+  },
 
-  const deleteTag = useCallback((id: string) => {
-    dispatch({ type: "DELETE_TAG", payload: id });
-  }, []);
+  getTagById: (id) => {
+    return get().tags.find((t) => t.id === id);
+  },
 
-  const getTasksByStatus = useCallback(
-    (status: TaskStatus) => state.tasks.filter((t) => t.status === status),
-    [state.tasks]
-  );
+  getTaskDependencies: (task) => {
+    return get().tasks.filter((t) => task.dependencyIds.includes(t.id));
+  },
+}));
 
-  const getPersonById = useCallback(
-    (id: string) => state.people.find((p) => p.id === id),
-    [state.people]
-  );
-
-  const getMilestoneById = useCallback(
-    (id: string) => state.milestones.find((m) => m.id === id),
-    [state.milestones]
-  );
-
-  const getTagById = useCallback(
-    (id: string) => state.tags.find((t) => t.id === id),
-    [state.tags]
-  );
-
-  const getTaskDependencies = useCallback(
-    (task: Task) =>
-      state.tasks.filter((t) => task.dependencyIds.includes(t.id)),
-    [state.tasks]
-  );
-
-  return (
-    <ProjectContext.Provider
-      value={{
-        state,
-        addTask,
-        updateTask,
-        deleteTask,
-        moveTask,
-        addPerson,
-        updatePerson,
-        deletePerson,
-        addMilestone,
-        updateMilestone,
-        deleteMilestone,
-        addTag,
-        updateTag,
-        deleteTag,
-        getTasksByStatus,
-        getPersonById,
-        getMilestoneById,
-        getTagById,
-        getTaskDependencies,
-      }}
-    >
-      {children}
-    </ProjectContext.Provider>
-  );
-}
-
+// Compatibility wrapper - keeps the same API as before
 export function useProject() {
-  const context = useContext(ProjectContext);
-  if (!context) {
-    throw new Error("useProject must be used within a ProjectProvider");
-  }
-  return context;
+  const store = useProjectStore();
+  return {
+    state: {
+      tasks: store.tasks,
+      people: store.people,
+      milestones: store.milestones,
+      tags: store.tags,
+    },
+    addTask: store.addTask,
+    updateTask: store.updateTask,
+    deleteTask: store.deleteTask,
+    moveTask: store.moveTask,
+    addPerson: store.addPerson,
+    updatePerson: store.updatePerson,
+    deletePerson: store.deletePerson,
+    addMilestone: store.addMilestone,
+    updateMilestone: store.updateMilestone,
+    deleteMilestone: store.deleteMilestone,
+    addTag: store.addTag,
+    updateTag: store.updateTag,
+    deleteTag: store.deleteTag,
+    getTasksByStatus: store.getTasksByStatus,
+    getPersonById: store.getPersonById,
+    getMilestoneById: store.getMilestoneById,
+    getTagById: store.getTagById,
+    getTaskDependencies: store.getTaskDependencies,
+  };
 }

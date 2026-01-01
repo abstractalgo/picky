@@ -71,43 +71,104 @@ function TaskDialogForm({ task, defaultStatus, onClose }: TaskDialogFormProps) {
 
   const [title, setTitle] = useState(task?.title ?? "");
   const [description, setDescription] = useState(task?.description ?? "");
-  const [status, setStatus] = useState<TaskStatus>(task?.status ?? defaultStatus);
-  const [assigneeIds, setAssigneeIds] = useState<string[]>(task?.assigneeIds ?? []);
+  const [status, setStatus] = useState<TaskStatus>(
+    task?.status ?? defaultStatus
+  );
+  const [storyPoints, setStoryPoints] = useState<number | undefined>(
+    task?.storyPoints
+  );
+  const [assigneeIds, setAssigneeIds] = useState<string[]>(
+    task?.assigneeIds ?? []
+  );
   const [tagIds, setTagIds] = useState<string[]>(task?.tagIds ?? []);
-  const [dependencyIds, setDependencyIds] = useState<string[]>(task?.dependencyIds ?? []);
-  const [milestoneId, setMilestoneId] = useState<string | undefined>(task?.milestoneId);
+  const [dependencyIds, setDependencyIds] = useState<Task["id"][]>(
+    task?.dependencyIds ?? []
+  );
+  const [milestoneId, setMilestoneId] = useState<string | undefined>(
+    task?.milestoneId
+  );
   const [startDate, setStartDate] = useState<Date | undefined>(
     task?.startDate ? new Date(task.startDate) : undefined
   );
   const [endDate, setEndDate] = useState<Date | undefined>(
     task?.endDate ? new Date(task.endDate) : undefined
   );
+  const [dependencySearch, setDependencySearch] = useState("");
 
-  const handleSubmit = () => {
+  // Helper to update task immediately when editing
+  const saveIfEditing = (updates: Partial<Task>) => {
+    if (isEditing && task) {
+      updateTask({
+        ...task,
+        title: title.trim(),
+        description: description.trim() || undefined,
+        status,
+        storyPoints,
+        assigneeIds,
+        tagIds,
+        dependencyIds,
+        milestoneId,
+        startDate: startDate?.toISOString(),
+        endDate: endDate?.toISOString(),
+        ...updates,
+      });
+    }
+  };
+
+  const handleTitleChange = (value: string) => {
+    setTitle(value);
+    if (value.trim()) {
+      saveIfEditing({ title: value.trim() });
+    }
+  };
+
+  const handleDescriptionChange = (value: string) => {
+    setDescription(value);
+    saveIfEditing({ description: value.trim() || undefined });
+  };
+
+  const handleStatusChange = (value: TaskStatus) => {
+    setStatus(value);
+    saveIfEditing({ status: value });
+  };
+
+  const handleStoryPointsChange = (value: number | undefined) => {
+    setStoryPoints(value);
+    saveIfEditing({ storyPoints: value });
+  };
+
+  const handleStartDateChange = (value: Date | undefined) => {
+    setStartDate(value);
+    saveIfEditing({ startDate: value?.toISOString() });
+  };
+
+  const handleEndDateChange = (value: Date | undefined) => {
+    setEndDate(value);
+    saveIfEditing({ endDate: value?.toISOString() });
+  };
+
+  const handleMilestoneChange = (value: string | undefined) => {
+    setMilestoneId(value);
+    saveIfEditing({ milestoneId: value });
+  };
+
+  const handleCreate = () => {
     if (!title.trim()) {
       return;
     }
 
-    const taskData = {
+    addTask({
       title: title.trim(),
       description: description.trim() || undefined,
       status,
+      storyPoints,
       assigneeIds,
       tagIds,
       dependencyIds,
       milestoneId,
       startDate: startDate?.toISOString(),
       endDate: endDate?.toISOString(),
-    };
-
-    if (isEditing && task) {
-      updateTask({
-        ...task,
-        ...taskData,
-      });
-    } else {
-      addTask(taskData);
-    }
+    });
 
     onClose();
   };
@@ -120,24 +181,47 @@ function TaskDialogForm({ task, defaultStatus, onClose }: TaskDialogFormProps) {
   };
 
   const toggleAssignee = (id: string) => {
-    setAssigneeIds((prev) =>
-      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]
-    );
+    const newAssigneeIds = assigneeIds.includes(id)
+      ? assigneeIds.filter((a) => a !== id)
+      : [...assigneeIds, id];
+    setAssigneeIds(newAssigneeIds);
+    saveIfEditing({ assigneeIds: newAssigneeIds });
   };
 
   const toggleTag = (id: string) => {
-    setTagIds((prev) =>
-      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
-    );
+    const newTagIds = tagIds.includes(id)
+      ? tagIds.filter((t) => t !== id)
+      : [...tagIds, id];
+    setTagIds(newTagIds);
+    saveIfEditing({ tagIds: newTagIds });
   };
 
-  const toggleDependency = (id: string) => {
-    setDependencyIds((prev) =>
-      prev.includes(id) ? prev.filter((d) => d !== id) : [...prev, id]
-    );
+  const addDependency = (id: Task["id"]) => {
+    if (!dependencyIds.includes(id)) {
+      const newDependencyIds = [...dependencyIds, id];
+      setDependencyIds(newDependencyIds);
+      saveIfEditing({ dependencyIds: newDependencyIds });
+    }
+    setDependencySearch("");
+  };
+
+  const removeDependency = (id: Task["id"]) => {
+    const newDependencyIds = dependencyIds.filter((d) => d !== id);
+    setDependencyIds(newDependencyIds);
+    saveIfEditing({ dependencyIds: newDependencyIds });
   };
 
   const availableTasks = state.tasks.filter((t) => t.id !== task?.id);
+  const searchResults = dependencySearch.trim()
+    ? availableTasks.filter(
+        (t) =>
+          !dependencyIds.includes(t.id) &&
+          t.title.toLowerCase().includes(dependencySearch.toLowerCase())
+      )
+    : [];
+  const selectedDependencies = availableTasks.filter((t) =>
+    dependencyIds.includes(t.id)
+  );
 
   return (
     <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
@@ -145,31 +229,35 @@ function TaskDialogForm({ task, defaultStatus, onClose }: TaskDialogFormProps) {
         <DialogTitle>{isEditing ? "Edit Task" : "Create Task"}</DialogTitle>
       </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Task title"
-            />
-          </div>
+      <div className="grid gap-4 py-4">
+        <div className="grid gap-2">
+          <Label htmlFor="title">Title</Label>
+          <Input
+            id="title"
+            value={title}
+            onChange={(e) => handleTitleChange(e.target.value)}
+            placeholder="Task title"
+          />
+        </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Task description"
-              rows={3}
-            />
-          </div>
+        <div className="grid gap-2">
+          <Label htmlFor="description">Description</Label>
+          <Textarea
+            id="description"
+            value={description}
+            onChange={(e) => handleDescriptionChange(e.target.value)}
+            placeholder="Task description"
+            rows={3}
+          />
+        </div>
 
+        <div className="grid grid-cols-2 gap-4">
           <div className="grid gap-2">
             <Label>Status</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as TaskStatus)}>
+            <Select
+              value={status}
+              onValueChange={(v) => handleStatusChange(v as TaskStatus)}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -183,176 +271,232 @@ function TaskDialogForm({ task, defaultStatus, onClose }: TaskDialogFormProps) {
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label>Start Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "justify-start text-left font-normal",
-                      !startDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? format(startDate, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    onSelect={setStartDate}
-                  />
-                  {startDate && (
-                    <div className="border-t p-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => setStartDate(undefined)}
-                      >
-                        <X className="mr-2 h-4 w-4" /> Clear
-                      </Button>
-                    </div>
-                  )}
-                </PopoverContent>
-              </Popover>
-            </div>
+          <div className="grid gap-2">
+            <Label htmlFor="storyPoints">Story Points</Label>
+            <Input
+              id="storyPoints"
+              type="number"
+              min={0}
+              value={storyPoints ?? ""}
+              onChange={(e) =>
+                handleStoryPointsChange(
+                  e.target.value ? Number(e.target.value) : undefined
+                )
+              }
+              placeholder="0"
+            />
+          </div>
+        </div>
 
-            <div className="grid gap-2">
-              <Label>Due Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "justify-start text-left font-normal",
-                      !endDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {endDate ? format(endDate, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={endDate}
-                    onSelect={setEndDate}
-                  />
-                  {endDate && (
-                    <div className="border-t p-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => setEndDate(undefined)}
-                      >
-                        <X className="mr-2 h-4 w-4" /> Clear
-                      </Button>
-                    </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-2">
+            <Label>Start Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "justify-start text-left font-normal",
+                    !startDate && "text-muted-foreground"
                   )}
-                </PopoverContent>
-              </Popover>
-            </div>
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {startDate ? format(startDate, "PPP") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={startDate}
+                  onSelect={handleStartDateChange}
+                />
+                {startDate && (
+                  <div className="border-t p-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => handleStartDateChange(undefined)}
+                    >
+                      <X className="mr-2 h-4 w-4" /> Clear
+                    </Button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
           </div>
 
-          {state.milestones.length > 0 && (
-            <div className="grid gap-2">
-              <Label>Milestone</Label>
-              <Select
-                value={milestoneId || "none"}
-                onValueChange={(v) => setMilestoneId(v === "none" ? undefined : v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select milestone" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No milestone</SelectItem>
-                  {state.milestones.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <div className="grid gap-2">
+            <Label>Due Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "justify-start text-left font-normal",
+                    !endDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {endDate ? format(endDate, "PPP") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={endDate}
+                  onSelect={handleEndDateChange}
+                />
+                {endDate && (
+                  <div className="border-t p-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => handleEndDateChange(undefined)}
+                    >
+                      <X className="mr-2 h-4 w-4" /> Clear
+                    </Button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
 
-          {state.people.length > 0 && (
-            <div className="grid gap-2">
-              <Label>Assignees</Label>
-              <div className="flex flex-wrap gap-2">
-                {state.people.map((person) => (
-                  <Badge
-                    key={person.id}
-                    variant={assigneeIds.includes(person.id) ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => toggleAssignee(person.id)}
-                  >
-                    {person.name}
-                  </Badge>
+        {state.milestones.length > 0 && (
+          <div className="grid gap-2">
+            <Label>Milestone</Label>
+            <Select
+              value={milestoneId || "none"}
+              onValueChange={(v) =>
+                handleMilestoneChange(v === "none" ? undefined : v)
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select milestone" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No milestone</SelectItem>
+                {state.milestones.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.name}
+                  </SelectItem>
                 ))}
-              </div>
-            </div>
-          )}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
-          {state.tags.length > 0 && (
-            <div className="grid gap-2">
-              <Label>Tags</Label>
-              <div className="flex flex-wrap gap-2">
-                {state.tags.map((tag) => (
-                  <Badge
-                    key={tag.id}
-                    variant={tagIds.includes(tag.id) ? "default" : "outline"}
-                    className="cursor-pointer"
-                    style={
-                      tagIds.includes(tag.id)
-                        ? { backgroundColor: tag.color, borderColor: tag.color }
-                        : { borderColor: tag.color, color: tag.color }
-                    }
-                    onClick={() => toggleTag(tag.id)}
-                  >
-                    {tag.name}
-                  </Badge>
-                ))}
-              </div>
+        {state.people.length > 0 && (
+          <div className="grid gap-2">
+            <Label>Assignees</Label>
+            <div className="flex flex-wrap gap-2">
+              {state.people.map((person) => (
+                <Badge
+                  key={person.id}
+                  variant={
+                    assigneeIds.includes(person.id) ? "default" : "outline"
+                  }
+                  className="cursor-pointer"
+                  onClick={() => toggleAssignee(person.id)}
+                >
+                  {person.name}
+                </Badge>
+              ))}
             </div>
-          )}
+          </div>
+        )}
 
-          {availableTasks.length > 0 && (
-            <div className="grid gap-2">
-              <Label>Dependencies</Label>
-              <div className="flex flex-wrap gap-2">
-                {availableTasks.map((t) => (
-                  <Badge
+        {state.tags.length > 0 && (
+          <div className="grid gap-2">
+            <Label>Tags</Label>
+            <div className="flex flex-wrap gap-2">
+              {state.tags.map((tag) => (
+                <Badge
+                  key={tag.id}
+                  variant={tagIds.includes(tag.id) ? "default" : "outline"}
+                  className="cursor-pointer"
+                  style={
+                    tagIds.includes(tag.id)
+                      ? { backgroundColor: tag.color, borderColor: tag.color }
+                      : { borderColor: tag.color, color: tag.color }
+                  }
+                  onClick={() => toggleTag(tag.id)}
+                >
+                  {tag.name}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="grid gap-2">
+          <Label>Dependencies</Label>
+          <div className="relative">
+            <Input
+              value={dependencySearch}
+              onChange={(e) => setDependencySearch(e.target.value)}
+              placeholder="Search tasks to add as dependency..."
+            />
+            {searchResults.length > 0 && (
+              <div className="absolute top-full z-10 mt-1 max-h-40 w-full overflow-y-auto rounded border border-border bg-popover shadow-md">
+                {searchResults.slice(0, 5).map((t) => (
+                  <button
                     key={t.id}
-                    variant={dependencyIds.includes(t.id) ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => toggleDependency(t.id)}
+                    type="button"
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
+                    onClick={() => addDependency(t.id)}
                   >
                     {t.title}
-                  </Badge>
+                  </button>
                 ))}
               </div>
+            )}
+          </div>
+          {selectedDependencies.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {selectedDependencies.map((t) => (
+                <Badge key={t.id} variant="secondary" className="gap-1">
+                  {t.title}
+                  <button
+                    type="button"
+                    onClick={() => removeDependency(t.id)}
+                    className="ml-1 hover:text-destructive"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
             </div>
           )}
         </div>
+      </div>
 
-        <DialogFooter className="flex-col gap-2 sm:flex-row">
-          {isEditing && (
-            <Button variant="destructive" onClick={handleDelete} className="sm:mr-auto">
-              Delete
-            </Button>
-          )}
+      <DialogFooter className="flex-col gap-2 sm:flex-row">
+        {isEditing && (
+          <Button
+            variant="destructive"
+            onClick={handleDelete}
+            className="sm:mr-auto"
+          >
+            Delete
+          </Button>
+        )}
+        {isEditing ? (
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            Close
           </Button>
-          <Button onClick={handleSubmit} disabled={!title.trim()}>
-            {isEditing ? "Save" : "Create"}
-          </Button>
+        ) : (
+          <>
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreate} disabled={!title.trim()}>
+              Create
+            </Button>
+          </>
+        )}
       </DialogFooter>
     </DialogContent>
   );

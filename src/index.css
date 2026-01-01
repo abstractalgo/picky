@@ -182,7 +182,10 @@
 }
 
 @layer base {
+  html {
+    font-size: 14px;
+  }
   body {
     letter-spacing: var(--tracking-normal);
-    }
+  }
 }
