@@ -1,19 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Task, Person, Milestone, Tag, TaskStatus } from "@/types";
-import { useProjectStore } from "@/store/ProjectContext";
+import { useProjectStore, queryProject } from "@/store/ProjectContext";
 import { useState, useCallback } from "react";
 
 // ============================================================================
 // Types
 // ============================================================================
-
-/** The current state snapshot passed to the agent */
-export type ProjectSnapshot = {
-  tasks: Task[];
-  people: Person[];
-  milestones: Milestone[];
-  tags: Tag[];
-};
 
 /** All possible action types the agent can take */
 export type AgentActionType =
@@ -310,46 +302,89 @@ const tools: Anthropic.Tool[] = [
       required: ["id"],
     },
   },
+  {
+    name: "query",
+    description: `Execute a SQL query against the project state to retrieve data.
+
+Available tables (use positional references):
+- ? or $0: tasks (id, title, description, status, storyPoints, assigneeIds, tagIds, dependencyIds, milestoneId, startDate, endDate, createdAt, updatedAt)
+- $1: people (id, name, avatarUrl)
+- $2: milestones (id, name, description, startDate, endDate)
+- $3: tags (id, name, color)
+- $4: task_assignees (taskId, personId) - junction table
+- $5: task_tags (taskId, tagId) - junction table
+- $6: task_dependencies (taskId, dependsOnTaskId) - junction table
+
+Example queries:
+- "SELECT * FROM ? WHERE status = 'todo'" - Get all todo tasks
+- "SELECT COUNT(*) as count FROM ? GROUP BY status" - Count tasks by status
+- "SELECT t.id, t.title, p.name FROM ? t JOIN $4 ta ON t.id = ta.taskId JOIN $1 p ON ta.personId = p.id" - Tasks with assignees
+- "SELECT * FROM $1" - Get all people
+- "SELECT * FROM ? WHERE ARRAY_LENGTH(assigneeIds) = 0" - Unassigned tasks`,
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        sql: {
+          type: "string",
+          description: "The SQL query to execute",
+        },
+      },
+      required: ["sql"],
+    },
+  },
 ];
 
 // ============================================================================
 // System Prompt
 // ============================================================================
 
-function buildSystemPrompt(snapshot: ProjectSnapshot): string {
+function buildSystemPrompt(): string {
   return `You are an AI assistant that helps manage a project management application (like Jira or Trello).
 
-You have access to tools that allow you to create, update, delete, and organize:
-- Tasks (work items with status, assignees, tags, etc.)
-- People (team members)
-- Milestones (time-boxed goals)
-- Tags (categories for tasks)
+You have access to tools that allow you to:
+1. **Query** the project state using SQL (use the \`query\` tool first to understand the data)
+2. **Create, update, delete** tasks, people, milestones, and tags
 
-## Current Project State
+## Important: Query First!
+You do NOT have the project data in this prompt. Use the \`query\` tool to retrieve any data you need before making changes.
 
-### People (${snapshot.people.length})
-${JSON.stringify(snapshot.people, null, 2)}
+## Data Model
 
-### Milestones (${snapshot.milestones.length})
-${JSON.stringify(snapshot.milestones, null, 2)}
+### Tasks
+- id (number), title, description, status, storyPoints
+- assigneeIds (array of person IDs), tagIds (array of tag IDs), dependencyIds (array of task IDs)
+- milestoneId (optional), startDate, endDate, createdAt, updatedAt
 
-### Tags (${snapshot.tags.length})
-${JSON.stringify(snapshot.tags, null, 2)}
+### People
+- id (string), name, avatarUrl (optional)
 
-### Tasks (${snapshot.tasks.length})
-${JSON.stringify(snapshot.tasks, null, 2)}
+### Milestones
+- id (string), name, description, startDate, endDate
+
+### Tags
+- id (string), name, color (hex code)
 
 ## Task Statuses
-Tasks flow through these statuses: backlog → todo → in_progress → in_review → done
+Tasks flow through: backlog → todo → in_progress → in_review → done
+
+## Query Tool Reference
+Use positional table references in SQL:
+- \`?\` or \`$0\`: tasks
+- \`$1\`: people
+- \`$2\`: milestones
+- \`$3\`: tags
+- \`$4\`: task_assignees (taskId, personId)
+- \`$5\`: task_tags (taskId, tagId)
+- \`$6\`: task_dependencies (taskId, dependsOnTaskId)
 
 ## Guidelines
-1. When creating tasks, always set appropriate status, assigneeIds (can be empty array), tagIds (can be empty array), and dependencyIds (can be empty array).
-2. When updating a task, you must provide ALL fields including id, createdAt, and updatedAt from the original task.
-3. Use existing person IDs, tag IDs, and milestone IDs when referencing them.
-4. Story points typically use Fibonacci: 1, 2, 3, 5, 8, 13.
+1. **Always query first** to understand the current state before making changes.
+2. When creating tasks, always set: status, assigneeIds (can be []), tagIds (can be []), dependencyIds (can be []).
+3. When updating a task, you must provide ALL fields including id, createdAt, and updatedAt.
+4. Story points use Fibonacci: 1, 2, 3, 5, 8, 13.
 5. Dates should be ISO 8601 format.
 
-Analyze the user's request and use the appropriate tools to accomplish their goal. You may need to use multiple tools in sequence.`;
+Analyze the user's request, query the necessary data, then use the appropriate tools to accomplish their goal.`;
 }
 
 // ============================================================================
@@ -369,10 +404,7 @@ export class ProjectAgent {
    * Execute a goal and return the planned actions.
    * Does NOT apply the actions - call executeActions() to apply them.
    */
-  async planActions(
-    goal: string,
-    snapshot: ProjectSnapshot
-  ): Promise<AgentResult> {
+  async planActions(goal: string): Promise<AgentResult> {
     const actions: AgentAction[] = [];
     let reasoning = "";
 
@@ -386,7 +418,7 @@ export class ProjectAgent {
       const response = await this.client.messages.create({
         model: this.model,
         max_tokens: 4096,
-        system: buildSystemPrompt(snapshot),
+        system: buildSystemPrompt(),
         tools,
         messages,
       });
@@ -410,22 +442,34 @@ export class ProjectAgent {
         // Process each tool call and collect results
         const toolResults: Anthropic.ToolResultBlockParam[] = [];
         for (const toolUse of toolUseBlocks) {
-          const action = this.toolCallToAction(
-            toolUse.name as AgentActionType,
-            toolUse.input as Record<string, unknown>
-          );
-          if (action) {
-            actions.push(action);
-          }
+          // Handle query tool specially - execute it and return results
+          if (toolUse.name === "query") {
+            const input = toolUse.input as { sql: string };
+            const result = queryProject(input.sql);
+            toolResults.push({
+              type: "tool_result",
+              tool_use_id: toolUse.id,
+              content: JSON.stringify(result),
+            });
+          } else {
+            // For mutation tools, queue them as actions
+            const action = this.toolCallToAction(
+              toolUse.name as AgentActionType,
+              toolUse.input as Record<string, unknown>
+            );
+            if (action) {
+              actions.push(action);
+            }
 
-          toolResults.push({
-            type: "tool_result",
-            tool_use_id: toolUse.id,
-            content: JSON.stringify({
-              success: true,
-              message: `Action ${toolUse.name} queued for execution`,
-            }),
-          });
+            toolResults.push({
+              type: "tool_result",
+              tool_use_id: toolUse.id,
+              content: JSON.stringify({
+                success: true,
+                message: `Action ${toolUse.name} queued for execution`,
+              }),
+            });
+          }
         }
 
         // Add tool results
@@ -611,19 +655,6 @@ export function executeActions(actions: AgentAction[]): void {
   }
 }
 
-/**
- * Get current project state as a snapshot
- */
-export function getProjectSnapshot(): ProjectSnapshot {
-  const store = useProjectStore.getState();
-  return {
-    tasks: store.tasks,
-    people: store.people,
-    milestones: store.milestones,
-    tags: store.tags,
-  };
-}
-
 // ============================================================================
 // React Hook for using the agent
 // ============================================================================
@@ -650,8 +681,7 @@ export function useProjectAgent() {
       setState((s) => ({ ...s, isLoading: true, error: null }));
 
       try {
-        const snapshot = getProjectSnapshot();
-        const result = await agent.planActions(goal, snapshot);
+        const result = await agent.planActions(goal);
 
         if (autoExecute && result.actions.length > 0) {
           executeActions(result.actions);

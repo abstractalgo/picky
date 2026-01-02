@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import alasql from "alasql";
 import type { Task, Person, Milestone, Tag, TaskStatus } from "@/types";
 
 interface ProjectState {
@@ -9,7 +10,17 @@ interface ProjectState {
   nextTaskId: number;
 }
 
+/** Result of a SQL query */
+export type QueryResult<T = unknown> = {
+  success: true;
+  data: T[];
+} | {
+  success: false;
+  error: string;
+};
+
 interface ProjectActions {
+  // === Mutation Actions ===
   addTask: (task: Omit<Task, "id" | "createdAt" | "updatedAt">) => void;
   updateTask: (task: Task) => void;
   deleteTask: (id: Task["id"]) => void;
@@ -23,11 +34,45 @@ interface ProjectActions {
   addTag: (tag: Omit<Tag, "id">) => void;
   updateTag: (tag: Tag) => void;
   deleteTag: (id: Tag["id"]) => void;
+
+  // === Query Actions ===
   getTasksByStatus: (status: TaskStatus) => Task[];
   getPersonById: (id: Person["id"]) => Person | undefined;
   getMilestoneById: (id: Milestone["id"]) => Milestone | undefined;
   getTagById: (id: Tag["id"]) => Tag | undefined;
   getTaskDependencies: (task: Task) => Task[];
+
+  /**
+   * Execute a SQL query against the project state.
+   *
+   * Use `?` placeholders for table references. Tables are passed in this order:
+   * - `?` or `$0`: tasks
+   * - `$1`: people
+   * - `$2`: milestones
+   * - `$3`: tags
+   * - `$4`: task_assignees (taskId, personId)
+   * - `$5`: task_tags (taskId, tagId)
+   * - `$6`: task_dependencies (taskId, dependsOnTaskId)
+   *
+   * @example
+   * // Get all todo tasks
+   * query("SELECT * FROM ? WHERE status = 'todo'")
+   *
+   * // Get tasks with their assignee names
+   * query(`
+   *   SELECT t.id, t.title, p.name as assignee
+   *   FROM ? t
+   *   JOIN $4 ta ON t.id = ta.taskId
+   *   JOIN $1 p ON ta.personId = p.id
+   * `)
+   *
+   * // Count tasks by status
+   * query("SELECT status, COUNT(*) as count FROM ? GROUP BY status")
+   *
+   * // Get unassigned tasks
+   * query("SELECT * FROM ? WHERE ARRAY_LENGTH(assigneeIds) = 0")
+   */
+  query: <T = unknown>(sql: string) => QueryResult<T>;
 }
 
 type ProjectStore = ProjectState & ProjectActions;
@@ -353,7 +398,60 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   getTaskDependencies: (task) => {
     return get().tasks.filter((t) => task.dependencyIds.includes(t.id));
   },
+
+  query: <T = unknown>(sql: string): QueryResult<T> => {
+    try {
+      const { tasks, people, milestones, tags } = get();
+
+      // Build junction tables for many-to-many relationships
+      const task_assignees: { taskId: number; personId: string }[] = [];
+      const task_tags: { taskId: number; tagId: string }[] = [];
+      const task_dependencies: {
+        taskId: number;
+        dependsOnTaskId: number;
+      }[] = [];
+
+      for (const task of tasks) {
+        for (const personId of task.assigneeIds) {
+          task_assignees.push({ taskId: task.id, personId });
+        }
+        for (const tagId of task.tagIds) {
+          task_tags.push({ taskId: task.id, tagId });
+        }
+        for (const depId of task.dependencyIds) {
+          task_dependencies.push({ taskId: task.id, dependsOnTaskId: depId });
+        }
+      }
+
+      // Execute query with tables passed as positional parameters
+      // $0=tasks, $1=people, $2=milestones, $3=tags, $4=task_assignees, $5=task_tags, $6=task_dependencies
+      const result = alasql(sql, [
+        tasks,
+        people,
+        milestones,
+        tags,
+        task_assignees,
+        task_tags,
+        task_dependencies,
+      ]) as T[];
+
+      return { success: true, data: result };
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Query failed",
+      };
+    }
+  },
 }));
+
+/**
+ * Execute a SQL query against the project state (standalone function).
+ * Use this outside of React components.
+ */
+export function queryProject<T = unknown>(sql: string): QueryResult<T> {
+  return useProjectStore.getState().query<T>(sql);
+}
 
 // Compatibility wrapper - keeps the same API as before
 export function useProject() {
@@ -383,5 +481,6 @@ export function useProject() {
     getMilestoneById: store.getMilestoneById,
     getTagById: store.getTagById,
     getTaskDependencies: store.getTaskDependencies,
+    query: store.query,
   };
 }

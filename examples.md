@@ -16,6 +16,7 @@ non-active context
 
 multi-step goals
   "remove all tasks with this milestone"
+  one step can fail because of the previous step (?)
 
 ---
 
