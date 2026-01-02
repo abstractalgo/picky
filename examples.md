@@ -14,6 +14,9 @@ non-active context
 
 "find ... task and assign `me`"
 
+multi-step goals
+  "remove all tasks with this milestone"
+
 ---
 
 static, implied, implicit context
