@@ -667,7 +667,7 @@ type AgentState = {
 
 const CLAUDE_API_KEY = import.meta.env.VITE_CLAUDE_API_KEY as string;
 
-const agent = new ProjectAgent(CLAUDE_API_KEY);
+export const aiAgent = new ProjectAgent(CLAUDE_API_KEY);
 
 export function useProjectAgent() {
   const [state, setState] = useState<AgentState>({
@@ -681,7 +681,7 @@ export function useProjectAgent() {
       setState((s) => ({ ...s, isLoading: true, error: null }));
 
       try {
-        const result = await agent.planActions(goal);
+        const result = await aiAgent.planActions(goal);
 
         if (autoExecute && result.actions.length > 0) {
           executeActions(result.actions);

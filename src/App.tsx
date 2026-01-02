@@ -7,6 +7,7 @@ import { HoverDebugPanel } from "@/components/HoverStore";
 import { Button } from "@/components/ui/button";
 import type { Task, TaskStatus } from "@/types";
 import { Plus } from "lucide-react";
+import { AgentDebugPanel } from "./components/AgentDebugPanel";
 
 export const App: FC = () => {
   const { state } = useProject();
@@ -61,6 +62,8 @@ export const App: FC = () => {
 
       {/* Hover Debug Panel */}
       <HoverDebugPanel />
+
+      <AgentDebugPanel />
     </div>
   );
 };
