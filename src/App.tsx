@@ -3,6 +3,7 @@ import { useProject } from "@/store/ProjectContext";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { TaskSheet } from "@/components/TaskSheet";
 import { Sidebar } from "@/components/Sidebar";
+import { HoverDebugPanel } from "@/components/HoverStore";
 import { Button } from "@/components/ui/button";
 import type { Task, TaskStatus } from "@/types";
 import { Plus } from "lucide-react";
@@ -57,6 +58,9 @@ export const App: FC = () => {
         task={selectedTask}
         defaultStatus={defaultStatus}
       />
+
+      {/* Hover Debug Panel */}
+      <HoverDebugPanel />
     </div>
   );
 };

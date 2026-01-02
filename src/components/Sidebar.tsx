@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useProject } from "@/store/ProjectContext";
 import type { Person, Milestone, Tag } from "@/types";
+import { HoverTarget } from "@/components/HoverStore";
 import {
   Sheet,
   SheetContent,
@@ -101,22 +102,24 @@ export function Sidebar() {
                     </p>
                   ) : (
                     state.people.map((person) => (
-                      <div
+                      <HoverTarget
                         key={person.id}
-                        className="group flex items-center justify-between rounded border border-border p-2"
+                        payload={{ type: "person", data: person }}
                       >
-                        <p className="min-w-0 truncate text-sm font-medium">
-                          {person.name}
-                        </p>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="opacity-0 group-hover:opacity-100"
-                          onClick={() => handleEditPerson(person)}
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                      </div>
+                        <div className="group flex items-center justify-between rounded border border-border p-2">
+                          <p className="min-w-0 truncate text-sm font-medium">
+                            {person.name}
+                          </p>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="opacity-0 group-hover:opacity-100"
+                            onClick={() => handleEditPerson(person)}
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </HoverTarget>
                     ))
                   )}
                 </div>
@@ -142,34 +145,36 @@ export function Sidebar() {
                     </p>
                   ) : (
                     state.milestones.map((milestone) => (
-                      <div
+                      <HoverTarget
                         key={milestone.id}
-                        className="group flex items-center justify-between rounded border border-border p-2"
+                        payload={{ type: "milestone", data: milestone }}
                       >
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">
-                            {milestone.name}
-                          </p>
-                          {(milestone.startDate || milestone.endDate) && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Calendar className="h-3 w-3" />
-                              {milestone.startDate &&
-                                format(new Date(milestone.startDate), "MMM d")}
-                              {milestone.startDate && milestone.endDate && " - "}
-                              {milestone.endDate &&
-                                format(new Date(milestone.endDate), "MMM d")}
-                            </div>
-                          )}
+                        <div className="group flex items-center justify-between rounded border border-border p-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">
+                              {milestone.name}
+                            </p>
+                            {(milestone.startDate || milestone.endDate) && (
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Calendar className="h-3 w-3" />
+                                {milestone.startDate &&
+                                  format(new Date(milestone.startDate), "MMM d")}
+                                {milestone.startDate && milestone.endDate && " - "}
+                                {milestone.endDate &&
+                                  format(new Date(milestone.endDate), "MMM d")}
+                              </div>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="opacity-0 group-hover:opacity-100"
+                            onClick={() => handleEditMilestone(milestone)}
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="opacity-0 group-hover:opacity-100"
-                          onClick={() => handleEditMilestone(milestone)}
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                      </div>
+                      </HoverTarget>
                     ))
                   )}
                 </div>
@@ -195,18 +200,22 @@ export function Sidebar() {
                     </p>
                   ) : (
                     state.tags.map((tag) => (
-                      <Badge
+                      <HoverTarget
                         key={tag.id}
-                        variant="secondary"
-                        className="cursor-pointer"
-                        style={{
-                          backgroundColor: tag.color + "20",
-                          color: tag.color,
-                        }}
-                        onClick={() => handleEditTag(tag)}
+                        payload={{ type: "tag", data: tag }}
                       >
-                        {tag.name}
-                      </Badge>
+                        <Badge
+                          variant="secondary"
+                          className="cursor-pointer"
+                          style={{
+                            backgroundColor: tag.color + "20",
+                            color: tag.color,
+                          }}
+                          onClick={() => handleEditTag(tag)}
+                        >
+                          {tag.name}
+                        </Badge>
+                      </HoverTarget>
                     ))
                   )}
                 </div>

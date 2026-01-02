@@ -6,5 +6,11 @@ import { App } from "./App.tsx";
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <App />
+    {/* <RecordAndTranscribe
+      onTranscript={(segm) => console.log(segm)}
+      onComplete={(words) => {
+        console.log(words);
+      }}
+    /> */}
   </StrictMode>
 );

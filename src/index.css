@@ -189,3 +189,13 @@
     letter-spacing: var(--tracking-normal);
   }
 }
+
+.hover-target {
+  &>.marker {
+    display: hidden;
+  }
+
+  &:hover .marker {
+    display: block;
+  }
+}

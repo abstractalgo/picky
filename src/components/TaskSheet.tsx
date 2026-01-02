@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Task, TaskStatus } from "@/types";
 import { TASK_STATUSES, TASK_STATUS_CONFIG } from "@/types";
 import { useProject } from "@/store/ProjectContext";
+import { HoverTarget } from "@/components/HoverStore";
 import {
   Sheet,
   SheetContent,
@@ -402,16 +403,20 @@ function TaskSheetForm({ task, defaultStatus, onClose }: TaskSheetFormProps) {
               <Label>Assignees</Label>
               <div className="flex flex-wrap gap-2">
                 {state.people.map((person) => (
-                  <Badge
+                  <HoverTarget
                     key={person.id}
-                    variant={
-                      assigneeIds.includes(person.id) ? "default" : "outline"
-                    }
-                    className="cursor-pointer"
-                    onClick={() => toggleAssignee(person.id)}
+                    payload={{ type: "person", data: person }}
                   >
-                    {person.name}
-                  </Badge>
+                    <Badge
+                      variant={
+                        assigneeIds.includes(person.id) ? "default" : "outline"
+                      }
+                      className="cursor-pointer"
+                      onClick={() => toggleAssignee(person.id)}
+                    >
+                      {person.name}
+                    </Badge>
+                  </HoverTarget>
                 ))}
               </div>
             </div>
@@ -422,19 +427,23 @@ function TaskSheetForm({ task, defaultStatus, onClose }: TaskSheetFormProps) {
               <Label>Tags</Label>
               <div className="flex flex-wrap gap-2">
                 {state.tags.map((tag) => (
-                  <Badge
+                  <HoverTarget
                     key={tag.id}
-                    variant={tagIds.includes(tag.id) ? "default" : "outline"}
-                    className="cursor-pointer"
-                    style={
-                      tagIds.includes(tag.id)
-                        ? { backgroundColor: tag.color, borderColor: tag.color }
-                        : { borderColor: tag.color, color: tag.color }
-                    }
-                    onClick={() => toggleTag(tag.id)}
+                    payload={{ type: "tag", data: tag }}
                   >
-                    {tag.name}
-                  </Badge>
+                    <Badge
+                      variant={tagIds.includes(tag.id) ? "default" : "outline"}
+                      className="cursor-pointer"
+                      style={
+                        tagIds.includes(tag.id)
+                          ? { backgroundColor: tag.color, borderColor: tag.color }
+                          : { borderColor: tag.color, color: tag.color }
+                      }
+                      onClick={() => toggleTag(tag.id)}
+                    >
+                      {tag.name}
+                    </Badge>
+                  </HoverTarget>
                 ))}
               </div>
             </div>
@@ -466,16 +475,21 @@ function TaskSheetForm({ task, defaultStatus, onClose }: TaskSheetFormProps) {
             {selectedDependencies.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {selectedDependencies.map((t) => (
-                  <Badge key={t.id} variant="secondary" className="gap-1">
-                    #{t.id} {t.title}
-                    <button
-                      type="button"
-                      onClick={() => removeDependency(t.id)}
-                      className="ml-1 hover:text-destructive"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
+                  <HoverTarget
+                    key={t.id}
+                    payload={{ type: "task", data: t }}
+                  >
+                    <Badge variant="secondary" className="gap-1">
+                      #{t.id} {t.title}
+                      <button
+                        type="button"
+                        onClick={() => removeDependency(t.id)}
+                        className="ml-1 hover:text-destructive"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  </HoverTarget>
                 ))}
               </div>
             )}
