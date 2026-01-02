@@ -1,22 +1,27 @@
 import { useState, type FormEvent } from "react";
 import { useProjectAgent } from "@/components/ai-agent";
+import {
+  executeActionsWithConfirmation,
+  useUndoActions,
+} from "@/components/action-executor-with-confirmation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Bot, Play, Loader2, CheckCircle, XCircle, Zap } from "lucide-react";
+import {
+  Bot,
+  Play,
+  Loader2,
+  CheckCircle,
+  XCircle,
+  Zap,
+  Undo2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const SAMPLE_GOALS = [
-  "List all people and their current workload",
-  "Find all unassigned tasks and assign them to the person with the least tasks",
-  "Move all 'todo' tasks with the 'urgent' tag to 'in_progress'",
-  "Create a new task called 'Code Review' and assign it to the first available person",
-];
-
 export function AgentDebugPanel() {
-  const [goal, setGoal] = useState(SAMPLE_GOALS[0]);
+  const [goal, setGoal] = useState("give me all tasks that are overdue");
   const [isExpanded, setIsExpanded] = useState(false);
-  const { isLoading, error, lastResult, runGoal, executeLastResult } =
-    useProjectAgent();
+  const { isLoading, error, lastResult, runGoal } = useProjectAgent();
+  const { canUndo, undoLast } = useUndoActions();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -27,7 +32,9 @@ export function AgentDebugPanel() {
   };
 
   const handleExecute = () => {
-    executeLastResult();
+    if (lastResult) {
+      executeActionsWithConfirmation(lastResult.actions, goal);
+    }
   };
 
   return (
@@ -82,28 +89,14 @@ export function AgentDebugPanel() {
                   </>
                 )}
               </Button>
-              <select
-                className="rounded border border-input bg-background px-2 text-xs"
-                onChange={(e) => setGoal(e.target.value)}
-                value=""
-              >
-                <option value="" disabled>
-                  Samples
-                </option>
-                {SAMPLE_GOALS.map((g, i) => (
-                  <option key={i} value={g}>
-                    {g.slice(0, 40)}...
-                  </option>
-                ))}
-              </select>
             </div>
           </form>
 
           {/* Error */}
           {error && (
-            <div className="flex items-center gap-2 border-b border-border bg-destructive/10 p-3 text-xs text-destructive">
+            <div className="flex items-start gap-2 border-b border-border bg-destructive/10 p-3 text-xs text-destructive">
               <XCircle className="h-4 w-4 shrink-0" />
-              <span className="line-clamp-2">{error}</span>
+              <div className="max-h-24 overflow-auto">{error}</div>
             </div>
           )}
 
@@ -116,9 +109,8 @@ export function AgentDebugPanel() {
                   <div className="mb-1 text-xs font-medium text-muted-foreground">
                     Reasoning
                   </div>
-                  <div className="rounded bg-muted p-2 text-xs">
-                    {lastResult.reasoning.slice(0, 300)}
-                    {lastResult.reasoning.length > 300 && "..."}
+                  <div className="max-h-32 overflow-auto rounded bg-muted p-2 text-xs whitespace-pre-wrap">
+                    {lastResult.reasoning}
                   </div>
                 </div>
               )}
@@ -129,15 +121,28 @@ export function AgentDebugPanel() {
                   Actions ({lastResult.actions.length})
                 </span>
                 {lastResult.actions.length > 0 && (
-                  <Button
-                    size="sm"
-                    variant="default"
-                    onClick={handleExecute}
-                    className="h-6 text-xs"
-                  >
-                    <Zap className="mr-1 h-3 w-3" />
-                    Execute All
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={handleExecute}
+                      className="h-6 text-xs"
+                    >
+                      <Zap className="mr-1 h-3 w-3" />
+                      Execute All
+                    </Button>
+                    {canUndo && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={undoLast}
+                        className="h-6 text-xs"
+                        title="Undo last action"
+                      >
+                        <Undo2 className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -156,8 +161,8 @@ export function AgentDebugPanel() {
                       <span className="font-mono font-medium text-primary">
                         {action.type}
                       </span>
-                      <pre className="mt-1 overflow-auto text-[10px] text-muted-foreground">
-                        {JSON.stringify(action.payload, null, 2).slice(0, 200)}
+                      <pre className="mt-1 max-h-32 overflow-auto text-[10px] text-muted-foreground">
+                        {JSON.stringify(action.payload, null, 2)}
                       </pre>
                     </div>
                   ))}

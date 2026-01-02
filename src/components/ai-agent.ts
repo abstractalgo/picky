@@ -393,9 +393,9 @@ Analyze the user's request, query the necessary data, then use the appropriate t
 
 export class ProjectAgent {
   private client: Anthropic;
-  private model: string;
+  private model: Anthropic.Model;
 
-  constructor(apiKey: string, model: string = "claude-sonnet-4-20250514") {
+  constructor(apiKey: string, model: Anthropic.Model = "claude-haiku-4-5") {
     this.client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
     this.model = model;
   }

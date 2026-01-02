@@ -27,6 +27,7 @@ export default defineConfig([
           varsIgnorePattern: "^_",
         },
       ],
+      "@typescript-eslint/ban-ts-comment": "off",
       "react-refresh/only-export-components": "off",
       curly: "error",
       "no-restricted-syntax": [

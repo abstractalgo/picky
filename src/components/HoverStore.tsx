@@ -17,7 +17,12 @@ export type HoverPayload =
 /** A recorded hover event with timing */
 export type HoverEvent = {
   id: string;
-  payload: HoverPayload;
+  payload:
+    | { type: "person"; data: Person["id"] }
+    | { type: "task"; data: Task["id"] }
+    | { type: "milestone"; data: Milestone["id"] }
+    | { type: "tag"; data: Tag["id"] }
+    | { type: "status"; data: Task["status"] };
   startTime: number;
   endTime: number | null;
 };
@@ -39,41 +44,12 @@ type HoverActions = {
   endHover: (hoverId: string) => void;
   /** Clear all hover history */
   clearHistory: () => void;
-  /** Get hover events for a specific entity */
-  getHoverEventsFor: (
-    type: HoverableType,
-    id: string | number
-  ) => CompletedHoverEvent[];
-  /** Get total hover duration for a specific entity (in ms) */
-  getTotalHoverDuration: (type: HoverableType, id: string | number) => number;
 };
 
 type HoverStore = HoverState & HoverActions;
 
 function generateEventId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-}
-
-function getEntityId(payload: HoverPayload): string | number {
-  if (payload.type === "status") {
-    return payload.data;
-  }
-  return payload.data.id;
-}
-
-function getEntityLabel(payload: HoverPayload): string {
-  switch (payload.type) {
-    case "person":
-      return payload.data.name;
-    case "task":
-      return `#${payload.data.id} ${payload.data.title}`;
-    case "milestone":
-      return payload.data.name;
-    case "tag":
-      return payload.data.name;
-    case "status":
-      return payload.data;
-  }
 }
 
 export const useHoverStore = create<HoverStore>((set, get) => ({
@@ -85,7 +61,17 @@ export const useHoverStore = create<HoverStore>((set, get) => ({
       const newMap = new Map(state.activeHovers);
       newMap.set(hoverId, {
         id: generateEventId(),
-        payload,
+        // @ts-ignore
+        payload:
+          payload.type === "status"
+            ? {
+                type: "status",
+                data: payload.data,
+              }
+            : {
+                type: payload.type,
+                data: payload.data.id,
+              },
         startTime: Date.now(),
         endTime: null,
       });
@@ -116,20 +102,6 @@ export const useHoverStore = create<HoverStore>((set, get) => ({
 
   clearHistory: () => {
     set({ history: [] });
-  },
-
-  getHoverEventsFor: (type, id) => {
-    return get().history.filter(
-      (event) =>
-        event.payload.type === type && getEntityId(event.payload) === id
-    );
-  },
-
-  getTotalHoverDuration: (type, id) => {
-    const events = get().getHoverEventsFor(type, id);
-    return events.reduce((total, event) => {
-      return total + (event.endTime - event.startTime);
-    }, 0);
   },
 }));
 
@@ -187,7 +159,10 @@ export function HoverTarget({
 
   return (
     <span
-      className={cn(className, "relative inline-block hover:ring-2 ring-red-500")}
+      className={cn(
+        className,
+        "relative inline-block hover:ring-2 ring-red-500"
+      )}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -250,9 +225,6 @@ export function HoverDebugPanel() {
                 >
                   {hover.payload.type}
                 </span>
-                <span className="min-w-0 truncate text-xs">
-                  {getEntityLabel(hover.payload)}
-                </span>
               </div>
             ))}
           </div>
@@ -286,13 +258,4 @@ export function useActiveHovers() {
 /** Hook to get hover history */
 export function useHoverHistory() {
   return useHoverStore((state) => state.history);
-}
-
-/** Hook to get hover stats for a specific entity */
-export function useHoverStats(type: HoverableType, id: string | number) {
-  const store = useHoverStore();
-  return {
-    events: store.getHoverEventsFor(type, id),
-    totalDuration: store.getTotalHoverDuration(type, id),
-  };
 }
