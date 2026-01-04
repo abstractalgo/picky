@@ -22,7 +22,7 @@ export function KanbanColumn({ status, tasks, onEditTask }: KanbanColumnProps) {
         data: status,
       }}
     >
-      <div className="flex h-full w-72 shrink-0 flex-col border-r border-border bg-muted/30">
+      <div className="flex h-full w-72 shrink-0 flex-col border-r border-border bg-muted/30 overflow-visible">
         <div className="flex items-center justify-between border-b border-border px-3 py-2">
           <div className="flex items-center gap-2">
             <span className={cn("rounded px-2 py-0.5 text-xs", config.color)}>
