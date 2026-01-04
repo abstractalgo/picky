@@ -13,6 +13,8 @@ export type AgentActionType =
   | "updateTask"
   | "deleteTask"
   | "moveTask"
+  | "addAssignee"
+  | "removeAssignee"
   | "addPerson"
   | "updatePerson"
   | "deletePerson"
@@ -29,6 +31,8 @@ export type AgentAction =
   | { type: "updateTask"; payload: Task }
   | { type: "deleteTask"; payload: { id: number } }
   | { type: "moveTask"; payload: { taskId: number; newStatus: TaskStatus } }
+  | { type: "addAssignee"; payload: { taskId: number; personId: string } }
+  | { type: "removeAssignee"; payload: { taskId: number; personId: string } }
   | { type: "addPerson"; payload: Omit<Person, "id"> }
   | { type: "updatePerson"; payload: Person }
   | { type: "deletePerson"; payload: { id: string } }
@@ -171,6 +175,36 @@ const tools: Anthropic.Tool[] = [
         },
       },
       required: ["taskId", "newStatus"],
+    },
+  },
+  {
+    name: "addAssignee",
+    description: "Add a person as an assignee to a task",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        taskId: { type: "number", description: "The task ID to assign" },
+        personId: {
+          type: "string",
+          description: "The person ID to add as assignee",
+        },
+      },
+      required: ["taskId", "personId"],
+    },
+  },
+  {
+    name: "removeAssignee",
+    description: "Remove a person from a task's assignees",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        taskId: { type: "number", description: "The task ID to modify" },
+        personId: {
+          type: "string",
+          description: "The person ID to remove from assignees",
+        },
+      },
+      required: ["taskId", "personId"],
     },
   },
   {
@@ -529,6 +563,24 @@ export class ProjectAgent {
           },
         };
 
+      case "addAssignee":
+        return {
+          type: "addAssignee",
+          payload: {
+            taskId: input.taskId as number,
+            personId: input.personId as string,
+          },
+        };
+
+      case "removeAssignee":
+        return {
+          type: "removeAssignee",
+          payload: {
+            taskId: input.taskId as number,
+            personId: input.personId as string,
+          },
+        };
+
       case "addPerson":
         return {
           type: "addPerson",
@@ -623,6 +675,12 @@ export function executeActions(actions: AgentAction[]): void {
         break;
       case "moveTask":
         store.moveTask(action.payload.taskId, action.payload.newStatus);
+        break;
+      case "addAssignee":
+        store.addAssignee(action.payload.taskId, action.payload.personId);
+        break;
+      case "removeAssignee":
+        store.removeAssignee(action.payload.taskId, action.payload.personId);
         break;
       case "addPerson":
         store.addPerson(action.payload);

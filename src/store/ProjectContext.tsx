@@ -25,6 +25,8 @@ interface ProjectActions {
   updateTask: (task: Task) => void;
   deleteTask: (id: Task["id"]) => void;
   moveTask: (taskId: Task["id"], newStatus: TaskStatus) => void;
+  addAssignee: (taskId: Task["id"], personId: Person["id"]) => void;
+  removeAssignee: (taskId: Task["id"], personId: Person["id"]) => void;
   addPerson: (person: Omit<Person, "id">) => void;
   updatePerson: (person: Person) => void;
   deletePerson: (id: Person["id"]) => void;
@@ -312,6 +314,34 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     }));
   },
 
+  addAssignee: (taskId, personId) => {
+    set((state) => ({
+      tasks: state.tasks.map((t) =>
+        t.id === taskId && !t.assigneeIds.includes(personId)
+          ? {
+              ...t,
+              assigneeIds: [...t.assigneeIds, personId],
+              updatedAt: new Date().toISOString(),
+            }
+          : t
+      ),
+    }));
+  },
+
+  removeAssignee: (taskId, personId) => {
+    set((state) => ({
+      tasks: state.tasks.map((t) =>
+        t.id === taskId
+          ? {
+              ...t,
+              assigneeIds: t.assigneeIds.filter((id) => id !== personId),
+              updatedAt: new Date().toISOString(),
+            }
+          : t
+      ),
+    }));
+  },
+
   addPerson: (person) => {
     set((state) => ({
       people: [...state.people, { ...person, id: generateId() }],
@@ -467,6 +497,8 @@ export function useProject() {
     updateTask: store.updateTask,
     deleteTask: store.deleteTask,
     moveTask: store.moveTask,
+    addAssignee: store.addAssignee,
+    removeAssignee: store.removeAssignee,
     addPerson: store.addPerson,
     updatePerson: store.updatePerson,
     deletePerson: store.deletePerson,

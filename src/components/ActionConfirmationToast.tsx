@@ -41,6 +41,10 @@ function formatActionLabel(action: AgentAction): string {
       return `Update tag: "${action.payload.name}"`;
     case "deleteTag":
       return `Delete tag #${action.payload.id}`;
+    case "addAssignee":
+      return `Add assignee ${action.payload.personId} to task #${action.payload.taskId}`;
+    case "removeAssignee":
+      return `Remove assignee ${action.payload.personId} from task #${action.payload.taskId}`;
   }
 }
 
