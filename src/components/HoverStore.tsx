@@ -239,7 +239,7 @@ export function HoverTarget({
   return (
     <span
       className={cn(
-        "relative inline-block transition-shadow",
+        "relative inline-block transition-shadow overflow-visible",
         isHighlighted && "ring-2 ring-primary ring-offset-1",
         className
       )}
