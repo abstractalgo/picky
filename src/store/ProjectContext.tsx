@@ -11,13 +11,15 @@ interface ProjectState {
 }
 
 /** Result of a SQL query */
-export type QueryResult<T = unknown> = {
-  success: true;
-  data: T[];
-} | {
-  success: false;
-  error: string;
-};
+export type QueryResult<T = unknown> =
+  | {
+      success: true;
+      data: T[];
+    }
+  | {
+      success: false;
+      error: string;
+    };
 
 interface ProjectActions {
   // === Mutation Actions ===
@@ -293,7 +295,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   updateTask: (task) => {
     set((state) => ({
       tasks: state.tasks.map((t) =>
-        t.id === task.id ? { ...task, updatedAt: new Date().toISOString() } : t
+        t.id === task.id ? { ...task, updatedAt: new Date().toISOString() } : t,
       ),
     }));
   },
@@ -309,7 +311,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       tasks: state.tasks.map((t) =>
         t.id === taskId
           ? { ...t, status: newStatus, updatedAt: new Date().toISOString() }
-          : t
+          : t,
       ),
     }));
   },
@@ -323,7 +325,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
               assigneeIds: [...t.assigneeIds, personId],
               updatedAt: new Date().toISOString(),
             }
-          : t
+          : t,
       ),
     }));
   },
@@ -337,7 +339,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
               assigneeIds: t.assigneeIds.filter((id) => id !== personId),
               updatedAt: new Date().toISOString(),
             }
-          : t
+          : t,
       ),
     }));
   },
@@ -373,7 +375,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   updateMilestone: (milestone) => {
     set((state) => ({
       milestones: state.milestones.map((m) =>
-        m.id === milestone.id ? milestone : m
+        m.id === milestone.id ? milestone : m,
       ),
     }));
   },
@@ -382,7 +384,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     set((state) => ({
       milestones: state.milestones.filter((m) => m.id !== id),
       tasks: state.tasks.map((t) =>
-        t.milestoneId === id ? { ...t, milestoneId: undefined } : t
+        t.milestoneId === id ? { ...t, milestoneId: undefined } : t,
       ),
     }));
   },
@@ -429,7 +431,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     return get().tasks.filter((t) => task.dependencyIds.includes(t.id));
   },
 
-  query: <T = unknown>(sql: string): QueryResult<T> => {
+  query: function <T = unknown>(sql: string): QueryResult<T> {
     try {
       const { tasks, people, milestones, tags } = get();
 

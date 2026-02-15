@@ -73,26 +73,26 @@ function TaskSheetForm({ task, defaultStatus, onClose }: TaskSheetFormProps) {
   const [title, setTitle] = useState(task?.title ?? "");
   const [description, setDescription] = useState(task?.description ?? "");
   const [status, setStatus] = useState<TaskStatus>(
-    task?.status ?? defaultStatus
+    task?.status ?? defaultStatus,
   );
   const [storyPoints, setStoryPoints] = useState<number | undefined>(
-    task?.storyPoints
+    task?.storyPoints,
   );
   const [assigneeIds, setAssigneeIds] = useState<string[]>(
-    task?.assigneeIds ?? []
+    task?.assigneeIds ?? [],
   );
   const [tagIds, setTagIds] = useState<string[]>(task?.tagIds ?? []);
   const [dependencyIds, setDependencyIds] = useState<Task["id"][]>(
-    task?.dependencyIds ?? []
+    task?.dependencyIds ?? [],
   );
   const [milestoneId, setMilestoneId] = useState<string | undefined>(
-    task?.milestoneId
+    task?.milestoneId,
   );
   const [startDate, setStartDate] = useState<Date | undefined>(
-    task?.startDate ? new Date(task.startDate) : undefined
+    task?.startDate ? new Date(task.startDate) : undefined,
   );
   const [endDate, setEndDate] = useState<Date | undefined>(
-    task?.endDate ? new Date(task.endDate) : undefined
+    task?.endDate ? new Date(task.endDate) : undefined,
   );
   const [dependencySearch, setDependencySearch] = useState("");
 
@@ -216,11 +216,11 @@ function TaskSheetForm({ task, defaultStatus, onClose }: TaskSheetFormProps) {
     ? availableTasks.filter(
         (t) =>
           !dependencyIds.includes(t.id) &&
-          t.title.toLowerCase().includes(dependencySearch.toLowerCase())
+          t.title.toLowerCase().includes(dependencySearch.toLowerCase()),
       )
     : [];
   const selectedDependencies = availableTasks.filter((t) =>
-    dependencyIds.includes(t.id)
+    dependencyIds.includes(t.id),
   );
 
   return (
@@ -290,7 +290,7 @@ function TaskSheetForm({ task, defaultStatus, onClose }: TaskSheetFormProps) {
                 value={storyPoints ?? ""}
                 onChange={(e) =>
                   handleStoryPointsChange(
-                    e.target.value ? Number(e.target.value) : undefined
+                    e.target.value ? Number(e.target.value) : undefined,
                   )
                 }
                 placeholder="0"
@@ -307,7 +307,7 @@ function TaskSheetForm({ task, defaultStatus, onClose }: TaskSheetFormProps) {
                     variant="outline"
                     className={cn(
                       "justify-start text-left font-normal",
-                      !startDate && "text-muted-foreground"
+                      !startDate && "text-muted-foreground",
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -344,7 +344,7 @@ function TaskSheetForm({ task, defaultStatus, onClose }: TaskSheetFormProps) {
                     variant="outline"
                     className={cn(
                       "justify-start text-left font-normal",
-                      !endDate && "text-muted-foreground"
+                      !endDate && "text-muted-foreground",
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -436,7 +436,10 @@ function TaskSheetForm({ task, defaultStatus, onClose }: TaskSheetFormProps) {
                       className="cursor-pointer"
                       style={
                         tagIds.includes(tag.id)
-                          ? { backgroundColor: tag.color, borderColor: tag.color }
+                          ? {
+                              backgroundColor: tag.color,
+                              borderColor: tag.color,
+                            }
                           : { borderColor: tag.color, color: tag.color }
                       }
                       onClick={() => toggleTag(tag.id)}
@@ -475,10 +478,7 @@ function TaskSheetForm({ task, defaultStatus, onClose }: TaskSheetFormProps) {
             {selectedDependencies.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {selectedDependencies.map((t) => (
-                  <HoverTarget
-                    key={t.id}
-                    payload={{ type: "task", data: t }}
-                  >
+                  <HoverTarget key={t.id} payload={{ type: "task", data: t }}>
                     <Badge variant="secondary" className="gap-1">
                       #{t.id} {t.title}
                       <button
