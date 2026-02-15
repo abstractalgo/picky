@@ -1,5 +1,5 @@
 import { type FC } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../components/ui/button";
 import { CheckCircle, Undo2 } from "lucide-react";
 
 interface UndoToastProps {

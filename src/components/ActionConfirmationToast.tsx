@@ -1,7 +1,7 @@
 import { useState, useEffect, type FC } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../components/ui/button";
 import { Clock, Play, Square, StopCircle, SkipForward } from "lucide-react";
-import type { AgentAction } from "@/components/ai-agent";
+import type { AgentAction } from "../components/ai-agent";
 
 interface SingleActionToastProps {
   action: AgentAction;

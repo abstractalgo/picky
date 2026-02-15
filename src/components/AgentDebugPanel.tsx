@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from "react";
-import { useProjectAgent } from "@/components/ai-agent";
+import { useProjectAgent } from "../components/ai-agent";
 import {
   executeActionsWithConfirmation,
   useUndoActions,
-} from "@/components/action-executor-with-confirmation";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+} from "../components/action-executor-with-confirmation";
+import { Button } from "../components/ui/button";
+import { Textarea } from "../components/ui/textarea";
 import {
   Bot,
   Play,
@@ -41,7 +41,7 @@ export function AgentDebugPanel() {
     <div
       className={cn(
         "fixed bottom-4 left-4 z-50 rounded-lg border border-border bg-background/95 shadow-lg backdrop-blur transition-all",
-        isExpanded ? "w-96" : "w-auto"
+        isExpanded ? "w-96" : "w-auto",
       )}
     >
       {/* Header */}

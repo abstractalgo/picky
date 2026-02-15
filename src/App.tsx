@@ -1,10 +1,10 @@
 import { useState, type FC } from "react";
 import { useProject } from "@/store/ProjectContext";
-import { KanbanBoard } from "@/components/kanban/KanbanBoard";
-import { TaskSheet } from "@/components/TaskSheet";
-import { Sidebar } from "@/components/Sidebar";
-import { HoverDebugPanel } from "@/components/HoverStore";
-import { Button } from "@/components/ui/button";
+import { KanbanBoard } from "./components/kanban/KanbanBoard";
+import { TaskSheet } from "./components/TaskSheet";
+import { Sidebar } from "./components/Sidebar";
+import { HoverDebugPanel } from "./components/HoverStore";
+import { Button } from "./components/ui/button";
 import type { Task, TaskStatus } from "@/types";
 import { Plus } from "lucide-react";
 import { AgentDebugPanel } from "./components/AgentDebugPanel";

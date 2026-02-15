@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "../components/ui/button";
 import { Mic, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -140,7 +140,7 @@ export function RecordAndTranscribe({
             utterance_end_ms: "1000",
             vad_events: "true",
           }),
-        ["token", DEEPGRAM_API_KEY]
+        ["token", DEEPGRAM_API_KEY],
       );
       socketRef.current = socket;
 
@@ -269,7 +269,7 @@ export function RecordAndTranscribe({
                 key={`${word.start}-${idx}`}
                 className={cn(
                   "cursor-default rounded px-1 transition-colors hover:bg-accent",
-                  idx >= finalizedWords.length && "text-muted-foreground"
+                  idx >= finalizedWords.length && "text-muted-foreground",
                 )}
                 title={`${word.start.toFixed(2)}s - ${word.end.toFixed(2)}s (${(word.confidence * 100).toFixed(0)}%)`}
               >

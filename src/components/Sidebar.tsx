@@ -1,18 +1,18 @@
 import { useState } from "react";
 import { useProject } from "@/store/ProjectContext";
 import type { Person, Milestone, Tag } from "@/types";
-import { HoverTarget } from "@/components/HoverStore";
+import { HoverTarget } from "../components/HoverStore";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+} from "../components/ui/sheet";
+import { Button } from "../components/ui/button";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { Separator } from "../components/ui/separator";
+import { Badge } from "../components/ui/badge";
 import { PersonDialog } from "./dialogs/PersonDialog";
 import { MilestoneDialog } from "./dialogs/MilestoneDialog";
 import { TagDialog } from "./dialogs/TagDialog";
@@ -34,7 +34,9 @@ export function Sidebar() {
   const [selectedPerson, setSelectedPerson] = useState<Person | undefined>();
 
   const [milestoneDialogOpen, setMilestoneDialogOpen] = useState(false);
-  const [selectedMilestone, setSelectedMilestone] = useState<Milestone | undefined>();
+  const [selectedMilestone, setSelectedMilestone] = useState<
+    Milestone | undefined
+  >();
 
   const [tagDialogOpen, setTagDialogOpen] = useState(false);
   const [selectedTag, setSelectedTag] = useState<Tag | undefined>();
@@ -134,7 +136,11 @@ export function Sidebar() {
                     <Flag className="h-4 w-4" />
                     Milestones
                   </div>
-                  <Button variant="ghost" size="icon" onClick={handleNewMilestone}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleNewMilestone}
+                  >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
@@ -158,8 +164,13 @@ export function Sidebar() {
                               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <Calendar className="h-3 w-3" />
                                 {milestone.startDate &&
-                                  format(new Date(milestone.startDate), "MMM d")}
-                                {milestone.startDate && milestone.endDate && " - "}
+                                  format(
+                                    new Date(milestone.startDate),
+                                    "MMM d",
+                                  )}
+                                {milestone.startDate &&
+                                  milestone.endDate &&
+                                  " - "}
                                 {milestone.endDate &&
                                   format(new Date(milestone.endDate), "MMM d")}
                               </div>

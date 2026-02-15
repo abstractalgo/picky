@@ -7,17 +7,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
+} from "../../components/ui/dialog";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import { Textarea } from "../../components/ui/textarea";
+import { Calendar } from "../../components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "../../components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon, X } from "lucide-react";
@@ -58,10 +58,10 @@ function MilestoneDialogForm({ milestone, onClose }: MilestoneDialogFormProps) {
   const [name, setName] = useState(milestone?.name ?? "");
   const [description, setDescription] = useState(milestone?.description ?? "");
   const [startDate, setStartDate] = useState<Date | undefined>(
-    milestone?.startDate ? new Date(milestone.startDate) : undefined
+    milestone?.startDate ? new Date(milestone.startDate) : undefined,
   );
   const [endDate, setEndDate] = useState<Date | undefined>(
-    milestone?.endDate ? new Date(milestone.endDate) : undefined
+    milestone?.endDate ? new Date(milestone.endDate) : undefined,
   );
 
   const handleSubmit = () => {
@@ -131,7 +131,7 @@ function MilestoneDialogForm({ milestone, onClose }: MilestoneDialogFormProps) {
                   variant="outline"
                   className={cn(
                     "justify-start text-left font-normal",
-                    !startDate && "text-muted-foreground"
+                    !startDate && "text-muted-foreground",
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
@@ -168,7 +168,7 @@ function MilestoneDialogForm({ milestone, onClose }: MilestoneDialogFormProps) {
                   variant="outline"
                   className={cn(
                     "justify-start text-left font-normal",
-                    !endDate && "text-muted-foreground"
+                    !endDate && "text-muted-foreground",
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />

@@ -8,25 +8,25 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+} from "../../components/ui/dialog";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import { Textarea } from "../../components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Calendar } from "@/components/ui/calendar";
+} from "../../components/ui/select";
+import { Badge } from "../../components/ui/badge";
+import { Calendar } from "../../components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "../../components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon, X } from "lucide-react";
@@ -72,26 +72,26 @@ function TaskDialogForm({ task, defaultStatus, onClose }: TaskDialogFormProps) {
   const [title, setTitle] = useState(task?.title ?? "");
   const [description, setDescription] = useState(task?.description ?? "");
   const [status, setStatus] = useState<TaskStatus>(
-    task?.status ?? defaultStatus
+    task?.status ?? defaultStatus,
   );
   const [storyPoints, setStoryPoints] = useState<number | undefined>(
-    task?.storyPoints
+    task?.storyPoints,
   );
   const [assigneeIds, setAssigneeIds] = useState<string[]>(
-    task?.assigneeIds ?? []
+    task?.assigneeIds ?? [],
   );
   const [tagIds, setTagIds] = useState<string[]>(task?.tagIds ?? []);
   const [dependencyIds, setDependencyIds] = useState<Task["id"][]>(
-    task?.dependencyIds ?? []
+    task?.dependencyIds ?? [],
   );
   const [milestoneId, setMilestoneId] = useState<string | undefined>(
-    task?.milestoneId
+    task?.milestoneId,
   );
   const [startDate, setStartDate] = useState<Date | undefined>(
-    task?.startDate ? new Date(task.startDate) : undefined
+    task?.startDate ? new Date(task.startDate) : undefined,
   );
   const [endDate, setEndDate] = useState<Date | undefined>(
-    task?.endDate ? new Date(task.endDate) : undefined
+    task?.endDate ? new Date(task.endDate) : undefined,
   );
   const [dependencySearch, setDependencySearch] = useState("");
 
@@ -216,11 +216,11 @@ function TaskDialogForm({ task, defaultStatus, onClose }: TaskDialogFormProps) {
     ? availableTasks.filter(
         (t) =>
           !dependencyIds.includes(t.id) &&
-          t.title.toLowerCase().includes(dependencySearch.toLowerCase())
+          t.title.toLowerCase().includes(dependencySearch.toLowerCase()),
       )
     : [];
   const selectedDependencies = availableTasks.filter((t) =>
-    dependencyIds.includes(t.id)
+    dependencyIds.includes(t.id),
   );
 
   return (
@@ -280,7 +280,7 @@ function TaskDialogForm({ task, defaultStatus, onClose }: TaskDialogFormProps) {
               value={storyPoints ?? ""}
               onChange={(e) =>
                 handleStoryPointsChange(
-                  e.target.value ? Number(e.target.value) : undefined
+                  e.target.value ? Number(e.target.value) : undefined,
                 )
               }
               placeholder="0"
@@ -297,7 +297,7 @@ function TaskDialogForm({ task, defaultStatus, onClose }: TaskDialogFormProps) {
                   variant="outline"
                   className={cn(
                     "justify-start text-left font-normal",
-                    !startDate && "text-muted-foreground"
+                    !startDate && "text-muted-foreground",
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
@@ -334,7 +334,7 @@ function TaskDialogForm({ task, defaultStatus, onClose }: TaskDialogFormProps) {
                   variant="outline"
                   className={cn(
                     "justify-start text-left font-normal",
-                    !endDate && "text-muted-foreground"
+                    !endDate && "text-muted-foreground",
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />

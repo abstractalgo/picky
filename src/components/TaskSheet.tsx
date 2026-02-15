@@ -2,33 +2,33 @@ import { useState } from "react";
 import type { Task, TaskStatus } from "@/types";
 import { TASK_STATUSES, TASK_STATUS_CONFIG } from "@/types";
 import { useProject } from "@/store/ProjectContext";
-import { HoverTarget } from "@/components/HoverStore";
+import { HoverTarget } from "../components/HoverStore";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetFooter,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "../components/ui/sheet";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Textarea } from "../components/ui/textarea";
+import { ScrollArea } from "../components/ui/scroll-area";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Calendar } from "@/components/ui/calendar";
+} from "../components/ui/select";
+import { Badge } from "../components/ui/badge";
+import { Calendar } from "../components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "../components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon, X } from "lucide-react";

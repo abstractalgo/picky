@@ -7,10 +7,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "../../components/ui/dialog";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
 
 interface PersonDialogProps {
   open: boolean;
@@ -18,7 +18,11 @@ interface PersonDialogProps {
   person?: Person;
 }
 
-export function PersonDialog({ open, onOpenChange, person }: PersonDialogProps) {
+export function PersonDialog({
+  open,
+  onOpenChange,
+  person,
+}: PersonDialogProps) {
   const formKey = person?.id ?? "new";
 
   return (
@@ -100,7 +104,11 @@ function PersonDialogForm({ person, onClose }: PersonDialogFormProps) {
 
       <DialogFooter className="flex-col gap-2 sm:flex-row">
         {isEditing && (
-          <Button variant="destructive" onClick={handleDelete} className="sm:mr-auto">
+          <Button
+            variant="destructive"
+            onClick={handleDelete}
+            className="sm:mr-auto"
+          >
             Delete
           </Button>
         )}

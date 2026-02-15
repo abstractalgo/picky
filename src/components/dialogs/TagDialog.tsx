@@ -7,10 +7,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "../../components/ui/dialog";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
 import { cn } from "@/lib/utils";
 
 const PRESET_COLORS = [
@@ -56,7 +56,7 @@ function TagDialogForm({ tag, onClose }: TagDialogFormProps) {
   const defaultColor = useMemo(
     // eslint-disable-next-line react-hooks/purity
     () => PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)],
-    []
+    [],
   );
 
   const [name, setName] = useState(tag?.name ?? "");
@@ -114,7 +114,7 @@ function TagDialogForm({ tag, onClose }: TagDialogFormProps) {
                 type="button"
                 className={cn(
                   "h-8 w-8 rounded border-2 transition-transform hover:scale-110",
-                  color === c ? "border-foreground" : "border-transparent"
+                  color === c ? "border-foreground" : "border-transparent",
                 )}
                 style={{ backgroundColor: c }}
                 onClick={() => setColor(c)}

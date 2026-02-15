@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { Task, Person, Milestone, Tag } from "@/types";
 import { useProjectStore } from "./ProjectContext";
-import type { AgentAction } from "@/components/ai-agent";
+import type { AgentAction } from "../components/ai-agent";
 
 /** Snapshot of the entire project state */
 export interface StateSnapshot {

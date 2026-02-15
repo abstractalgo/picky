@@ -1,9 +1,14 @@
 import { Draggable } from "@hello-pangea/dnd";
 import type { Task } from "@/types";
 import { useProject } from "@/store/ProjectContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { HoverTarget } from "@/components/HoverStore";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
+import { Badge } from "../../components/ui/badge";
+import { HoverTarget } from "../../components/HoverStore";
 import { cn } from "@/lib/utils";
 import { Calendar, Flag, Link } from "lucide-react";
 
@@ -40,7 +45,7 @@ export function TaskCard({ task, index, onEdit }: TaskCardProps) {
             {...provided.dragHandleProps}
             className={cn(
               "my-1 cursor-pointer transition-shadow hover:shadow-md",
-              snapshot.isDragging && "rotate-2 shadow-lg"
+              snapshot.isDragging && "rotate-2 shadow-lg",
             )}
             onClick={onEdit}
           >

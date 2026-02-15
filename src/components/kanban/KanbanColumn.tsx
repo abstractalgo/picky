@@ -2,7 +2,7 @@ import { Droppable } from "@hello-pangea/dnd";
 import type { Task, TaskStatus } from "@/types";
 import { TASK_STATUS_CONFIG } from "@/types";
 import { TaskCard } from "./TaskCard";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "../../components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { HoverTarget } from "../HoverStore";
 
@@ -41,7 +41,7 @@ export function KanbanColumn({ status, tasks, onEditTask }: KanbanColumnProps) {
                 {...provided.droppableProps}
                 className={cn(
                   "min-h-full p-2 transition-colors gap-2",
-                  snapshot.isDraggingOver && "bg-accent/50"
+                  snapshot.isDraggingOver && "bg-accent/50",
                 )}
               >
                 {tasks.map((task, index) => (
